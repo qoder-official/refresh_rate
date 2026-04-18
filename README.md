@@ -2,11 +2,22 @@
 
 [![pub package](https://img.shields.io/pub/v/refresh_rate.svg)](https://pub.dev/packages/refresh_rate)
 [![pub points](https://img.shields.io/pub/points/refresh_rate)](https://pub.dev/packages/refresh_rate/score)
+[![likes](https://img.shields.io/pub/likes/refresh_rate)](https://pub.dev/packages/refresh_rate/score)
+[![popularity](https://img.shields.io/pub/popularity/refresh_rate)](https://pub.dev/packages/refresh_rate/score)
 [![License: BSD-3](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://github.com/qoder-official/refresh_rate/blob/main/LICENSE)
 
-Cross-platform Flutter plugin to unlock, query, and verify your device's full display refresh rate — 90 Hz, 120 Hz, 144 Hz, and beyond.
+**Unlock your device's full refresh rate in one line of Flutter.**
 
-Flutter apps run at 60 Hz on high-refresh-rate devices by default because the engine never communicates peak capability to the OS compositor. `refresh_rate` makes that declaration in one line, and gives you diagnostics, benchmark sessions, and a live overlay to confirm it's actually working.
+Your Flutter app runs at 60 Hz on a 120 Hz phone right now. The engine never tells the OS compositor it can handle more. `refresh_rate` fixes that — and gives you diagnostics, benchmarks, and a live overlay to prove it.
+
+```dart
+void main() {
+  RefreshRate.enable();          // that's it — 120 Hz on a 120 Hz device
+  runApp(const MyApp());
+}
+```
+
+> **Why does this happen?** Flutter's engine never calls Android's `Surface.setFrameRate()` and the default iOS template is missing the `CADisableMinimumFrameDurationOnPhone` plist key. See [Flutter #160952](https://github.com/flutter/flutter/issues/160952). This package makes those calls for you.
 
 Built on [pigeon](https://pub.dev/packages/pigeon) — fully typed end-to-end, zero `MethodChannel` codec overhead.
 
@@ -14,16 +25,16 @@ Built on [pigeon](https://pub.dev/packages/pigeon) — fully typed end-to-end, z
 
 ## Platform support
 
-| Platform | Unlock | Query | Overlay | Sessions |
-|---|---|---|---|---|
-| Android 6+ (API 23) | ✅ | ✅ | ✅ | ✅ |
-| iOS 15+ | ✅ * | ✅ | ✅ | ✅ |
-| macOS 14+ (Sonoma) | ✅ | ✅ | ✅ | ✅ |
-| macOS < 14 | — | ✅ | ✅ | ✅ |
-| Windows | — | ✅ | ✅ | ✅ |
-| Linux | — | ✅ | ✅ | ✅ |
+| Platform | Unlock | Query | Overlay | Benchmark |
+|:---------|:------:|:-----:|:-------:|:---------:|
+| **Android** 6+ (API 23) | ✅ | ✅ | ✅ | ✅ |
+| **iOS** 15+ (ProMotion) | ✅ \* | ✅ | ✅ | ✅ |
+| **macOS** 14+ (Sonoma) | ✅ | ✅ | ✅ | ✅ |
+| **macOS** < 14 | — | ✅ | ✅ | ✅ |
+| **Windows** | — | ✅ | ✅ | ✅ |
+| **Linux** | — | ✅ | ✅ | ✅ |
 
-\* iOS requires an additional `Info.plist` key — see [iOS setup](#ios-setup) below.
+\* iOS requires `Info.plist` key — see [iOS setup](#ios-setup).
 
 ---
 
@@ -31,14 +42,27 @@ Built on [pigeon](https://pub.dev/packages/pigeon) — fully typed end-to-end, z
 
 ```yaml
 dependencies:
-  refresh_rate: ^0.1.0
+  refresh_rate: ^1.0.0
 ```
+
+### iOS setup
+
+Add to `ios/Runner/Info.plist` — required for > 60 Hz on iPhones with ProMotion:
+
+```xml
+<key>CADisableMinimumFrameDurationOnPhone</key>
+<true/>
+```
+
+Without this key, iOS caps your app at 60 Hz even on 120 Hz hardware. The plugin detects this at runtime and prints a console warning if missing. iPad Pro does **not** need this key.
 
 ---
 
 ## Quick start
 
 ```dart
+import 'package:refresh_rate/refresh_rate.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   RefreshRate.enable();   // unlocks peak rate on every supported device
@@ -46,46 +70,30 @@ void main() {
 }
 ```
 
-That's all you need for the common case. On a 120 Hz device, your app will now render at 120 Hz instead of the default 60 Hz Flutter lock.
-
-### iOS setup
-
-Add this key to `ios/Runner/Info.plist` — required for > 60 Hz on any iPhone with ProMotion:
-
-```xml
-<key>CADisableMinimumFrameDurationOnPhone</key>
-<true/>
-```
-
-Without this key, iOS ignores frame-rate hints from Flutter even if the hardware supports them.
+One call in `main()`. On a 120 Hz device your app now renders at 120 Hz. On a 60 Hz device nothing changes — the OS stays in control.
 
 ---
 
 ## Diagnostics
 
 ```dart
-// Synchronous cached snapshot — safe to call anywhere
-final info = RefreshRate.info;
+final info = RefreshRate.info;         // synchronous cached snapshot
 
-print(info.currentRate);          // 120.0
-print(info.maxRate);              // 120.0
-print(info.minRate);              // 60.0
-print(info.supportedRates);       // [60.0, 90.0, 120.0]
-print(info.isVariableRefreshRate); // true — LTPO panel
-print(info.androidApiLevel);      // 34 (Android only)
-print(info.displayServer);        // "wayland" (Linux only)
+print(info.currentRate);               // 120.0
+print(info.maxRate);                   // 120.0
+print(info.supportedRates);            // [60.0, 90.0, 120.0]
+print(info.isVariableRefreshRate);     // true (LTPO panel)
+print(info.androidApiLevel);           // 34 (Android only)
+print(info.displayServer);             // "wayland" (Linux only)
 
-// System state
-print(RefreshRate.isLowPowerMode);    // false
-print(RefreshRate.thermalState);      // ThermalState.nominal
-print(RefreshRate.isProMotionReady);  // true — plist key + hardware both present
+print(RefreshRate.isLowPowerMode);     // false
+print(RefreshRate.thermalState);       // ThermalState.nominal
+print(RefreshRate.isProMotionReady);   // true — plist key + hardware both present
 
-// Refresh whenever you need the latest snapshot
-await RefreshRate.refresh();
+await RefreshRate.refresh();           // reload platform cache
 
-// Stream: fires on rate change, Low Power Mode toggle, or thermal state change
-RefreshRate.onChanged.listen((info) {
-  print('Rate changed to ${info.currentRate} Hz');
+RefreshRate.onChanged.listen((info) {  // rate, Low Power Mode, or thermal change
+  print('Now running at ${info.currentRate} Hz');
 });
 ```
 
@@ -94,23 +102,14 @@ RefreshRate.onChanged.listen((info) {
 ## Advanced control
 
 ```dart
-// Prefer the maximum available rate
-RefreshRate.preferMax();
+RefreshRate.preferMax();                          // highest available rate
+RefreshRate.preferDefault();                      // return to OS default
+RefreshRate.matchContent(24.0);                   // sync to 24 fps video (fixes judder)
+RefreshRate.boost(const Duration(seconds: 2));    // temporary spike for gestures
 
-// Return to OS default
-RefreshRate.preferDefault();
-
-// Match display cadence to a specific content frame rate (fixes 24 fps video judder)
-RefreshRate.matchContent(24.0);
-
-// Temporary rate spike — useful for animations triggered by gestures
-RefreshRate.boost(const Duration(seconds: 2));
-
-// Android 15: semantic rate category
-RefreshRate.category(RateCategory.high);   // high | normal | low
-
-// Android 15-QPR1: enable touch-driven rate boost
-RefreshRate.setTouchBoost(true);
+// Android 15+
+RefreshRate.category(RateCategory.high);          // semantic rate category
+RefreshRate.setTouchBoost(true);                  // OS-managed touch boost
 ```
 
 ---
@@ -120,112 +119,112 @@ RefreshRate.setTouchBoost(true);
 Drop a live performance HUD into any debug build:
 
 ```dart
-@override
-void initState() {
-  super.initState();
-  if (kDebugMode) RefreshRate.showOverlay();
-}
+if (kDebugMode) RefreshRate.showOverlay();
 ```
 
-Or show individual badges:
+The overlay is **refresh-rate-aware**: FPS is colour-coded against the device's *actual* target Hz, not a hard-coded 60 Hz baseline. It also shows per-frame build/raster timings, frame budget, Low Power Mode, and thermal state.
 
 ```dart
-RefreshRate.showFPS();      // live FPS counter
-RefreshRate.showHz();       // current Hz badge
-RefreshRate.showOverlay();  // full diagnostic panel
-
-RefreshRate.hideOverlay();  // dismiss
+RefreshRate.showFPS();       // just the FPS counter
+RefreshRate.showHz();        // just the Hz badge
+RefreshRate.showOverlay();   // full diagnostic panel
+RefreshRate.hideOverlay();   // dismiss
 ```
-
-The full overlay shows:
-- Live FPS with colour-coded health (green / amber / red relative to the *device's actual target rate*, not a fixed 60 Hz baseline)
-- Per-frame build and raster timings in ms
-- Frame budget at the current target Hz
-- Low Power Mode warning
-- Thermal state warning
 
 ---
 
 ## Benchmark sessions
 
-Record a time-bounded performance window and get a structured report:
+Record a named performance window and get a structured report:
 
 ```dart
-// Start before user interaction
-final session = RefreshRate.startSession('home_feed_scroll');
+final session = RefreshRate.startSession('home_scroll');
 
-// … user scrolls for a few seconds …
+// ... user interacts ...
 
-// End and inspect
 final report = await session.end();
 
-print(report.verdict);             // Verdict.good | degraded | poor
-print(report.likelyBottleneck);    // Bottleneck.rasterBound | buildBound | none
+print(report.verdict);             // Verdict.good / degraded / poor
+print(report.likelyBottleneck);    // Bottleneck.rasterBound / buildBound / none
 print(report.avgFps);              // 108.4
-print(report.onePercentLowFps);    // 87.2  (1% low — worst-case jank metric)
+print(report.onePercentLowFps);    // 87.2
 print(report.missedFramePercent);  // 3.2%
-print(report.validDuration);       // Duration of frames actually counted
 
-// Export for CI / QA dashboards
-final json = report.toJson();
+final json = report.toJson();      // export for CI / QA dashboards
 ```
 
-Sessions automatically exclude:
-- App backgrounding / foregrounding
-- Resume warmup windows
-- Low Power Mode state changes
-- Thermal state changes
+Sessions automatically exclude app backgrounding, resume warmup, Low Power Mode toggles, and thermal state changes — so numbers reflect real rendering performance.
 
 ---
 
-## Migration from `flutter_displaymode`
+## How it works
 
-```dart
-// Before — verbose, Android-only, broken on LTPO displays
-final modes = await FlutterDisplayMode.supported;
-final highest = modes.reduce((a, b) => a.refreshRate > b.refreshRate ? a : b);
-await FlutterDisplayMode.setPreferredMode(highest);
+### Android
 
-// After — one line, all platforms
-RefreshRate.enable();
-```
+| API Level | What the plugin calls |
+|:---------:|:----------------------|
+| **34+** | `SurfaceControl.Transaction.setFrameRate()` — direct SurfaceFlinger vote |
+| **30–33** | `preferredRefreshRate` + `preferredDisplayModeId` — dual hint |
+| **23–29** | `preferredDisplayModeId` with resolution-match guard — legacy fallback |
 
-`flutter_displaymode` silently fails on Samsung/OnePlus/Pixel Pro LTPO panels, does nothing on iOS, and has been unmaintained since 2023. `refresh_rate` is actively maintained and supports all six Flutter platforms.
+Flutter never calls `Surface.setFrameRate()`. That single missing call is why 120 Hz phones render Flutter at 60 Hz.
+
+### iOS
+
+Sets `CADisplayLink.preferredFrameRateRange` with the device max. Validates the `CADisableMinimumFrameDurationOnPhone` plist key at runtime and warns loudly if missing.
+
+### macOS
+
+`NSView.displayLink` with `preferredFrameRateRange` on macOS 14+. Falls back to `NSScreen.maximumFramesPerSecond` / `CGDisplayCopyDisplayMode` for query.
+
+### Windows & Linux
+
+Query-only via `QueryDisplayConfig` (Win) and `gdk_monitor_get_refresh_rate` (Linux). Control depends on Flutter's desktop embedder evolution — tracked at [#93058](https://github.com/flutter/flutter/issues/93058) and [#183703](https://github.com/flutter/flutter/issues/183703).
 
 ---
 
 ## API reference
 
-| Method | Description |
-|---|---|
-| `RefreshRate.enable()` | Equivalent to `preferMax()` — call once in `main()` |
-| `RefreshRate.disable()` | Stop overriding; return to OS default |
-| `RefreshRate.preferMax()` | Request the highest available rate |
-| `RefreshRate.preferDefault()` | Clear any override |
-| `RefreshRate.matchContent(fps)` | Match display cadence to content frame rate |
-| `RefreshRate.boost(duration)` | Temporary max-rate spike |
-| `RefreshRate.category(cat)` | Android 15 semantic category |
-| `RefreshRate.setTouchBoost(bool)` | Android 15-QPR1 touch boost |
-| `RefreshRate.refresh()` | Reload platform info cache |
-| `RefreshRate.showFPS()` | Show live FPS overlay badge |
-| `RefreshRate.showHz()` | Show live Hz overlay badge |
-| `RefreshRate.showOverlay()` | Show full diagnostic overlay |
-| `RefreshRate.hideOverlay()` | Dismiss overlay |
-| `RefreshRate.startSession(name)` | Begin a benchmark session |
-| `RefreshRate.info` | Cached `RefreshRateInfo` snapshot |
-| `RefreshRate.isLowPowerMode` | Low Power / Battery Saver active |
-| `RefreshRate.thermalState` | `ThermalState` enum |
-| `RefreshRate.isProMotionReady` | iOS: plist key + ProMotion hardware |
-| `RefreshRate.onChanged` | `Stream<RefreshRateInfo>` |
+| Method | What it does |
+|:-------|:-------------|
+| `enable()` | Unlock peak rate — call once in `main()` |
+| `disable()` | Stop overriding, return to OS default |
+| `preferMax()` | Request highest available rate |
+| `preferDefault()` | Clear rate override |
+| `matchContent(fps)` | Sync display cadence to content frame rate |
+| `boost(duration)` | Temporary max-rate spike |
+| `category(cat)` | Android 15 semantic rate category |
+| `setTouchBoost(bool)` | Android 15 touch-driven boost |
+| `refresh()` | Reload platform info cache |
+| `info` | Cached `RefreshRateInfo` snapshot |
+| `isLowPowerMode` | Battery Saver / Low Power Mode active |
+| `thermalState` | `ThermalState` enum |
+| `isProMotionReady` | iOS plist key + ProMotion hardware |
+| `onChanged` | `Stream<RefreshRateInfo>` |
+| `showFPS()` | Live FPS counter overlay |
+| `showHz()` | Live Hz badge overlay |
+| `showOverlay()` | Full diagnostic overlay |
+| `hideOverlay()` | Dismiss overlay |
+| `startSession(name)` | Start benchmark session |
+
+---
+
+## Why this exists
+
+Flutter's engine (Impeller since 3.24) *can* render at 120 Hz. But it never *tells the OS*. On Android, `Surface.setFrameRate()` returns zero search results across the entire engine codebase. On iOS, the engine code is correct but the default template omits the plist key.
+
+This has been open since January 2023 ([#119268](https://github.com/flutter/flutter/issues/119268)), currently tracked at [#160952](https://github.com/flutter/flutter/issues/160952) (P2, unassigned).
+
+`refresh_rate` fixes this today on shipping apps, while collecting real-device evidence for an eventual engine-level fix.
 
 ---
 
 ## License
 
-BSD 3-Clause © 2026 [Qoder](https://qoder.in)
-
-See [LICENSE](https://github.com/qoder-official/refresh_rate/blob/main/LICENSE) for the full text.
+BSD 3-Clause &copy; 2026 [Qoder](https://qoder.in)
 
 ---
 
-Made with ♥ by [Qoder](https://qoder.in) · [Other packages](https://pub.dev/publishers/qoder.in/packages)
+<p align="center">
+  Made with care by <a href="https://qoder.in">Qoder</a>&ensp;&middot;&ensp;<a href="https://pub.dev/publishers/qoder.in/packages">More packages</a>
+</p>
