@@ -29,6 +29,16 @@ class RefreshRate {
   static StreamController<DisplayInfo>? _changedController;
   static final _flutterApi = _RefreshRateFlutterApiImpl();
 
+  // ── Platform registration ──────────────────────────────────────
+
+  /// Replaces the default platform API adapter.
+  ///
+  /// Called by platform-specific entrypoints (e.g. the web plugin) during
+  /// framework initialisation.  Not intended for end-user consumption.
+  static void registerAdapter(RefreshRateApiAdapter adapter) {
+    _api = adapter;
+  }
+
   // ── Test seam ──────────────────────────────────────────────────
 
   /// Replaces the platform API implementation with a test fake.

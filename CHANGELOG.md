@@ -2,11 +2,19 @@
 
 ## 1.0.1
 
-- chore: optimize package score for pub.dev
-  - Added documentation for all public APIs.
-  - Formatted SPM integration appropriately for iOS/macOS submodules.
-  - Added stub Web plugin for extended platform support recognition.
-  - Resolved minor lints from test suites.
+### Web support
+- Added web platform implementation using `requestAnimationFrame` interval
+  timing to detect the display's current refresh rate (same technique as TestUFO).
+- Control methods are graceful no-ops (browsers own vsync scheduling).
+- FPS overlay and benchmark sessions work unchanged on web.
+
+### Documentation
+- Added comprehensive Dartdoc comments to all public APIs.
+
+### Platform fixes
+- Restructured `Package.swift` into `ios/refresh_rate/` and `macos/refresh_rate/`
+  for correct Swift Package Manager module resolution.
+- Resolved minor lint warnings from test suites.
 
 ## 1.0.0
 
