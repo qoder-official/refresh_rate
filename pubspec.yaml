@@ -2,7 +2,7 @@ name: refresh_rate
 description: >-
   Unlock 90/120/144Hz on Android, iOS & desktop. Query display rates, control
   refresh, benchmark FPS with live debug overlays. Uses modern platform APIs.
-version: 1.0.0
+version: 1.0.1
 homepage: https://qoder.in/resources/refresh_rate
 repository: https://github.com/qoder-official/refresh_rate
 issue_tracker: https://github.com/qoder-official/refresh_rate/issues
@@ -16,10 +16,10 @@ topics:
   - ui
 
 screenshots:
-  - description: "Live FPS overlay showing refresh rate diagnostics"
-    path: screenshots/overlay.png
-  - description: "Before and after — 60Hz vs 120Hz on the same device"
-    path: screenshots/before-after.png
+  - description: "Live FPS overlay showing 120 FPS with frame budget diagnostics"
+    path: screenshots/fps.png
+  - description: "Hz badge confirming 120Hz refresh rate on a real device"
+    path: screenshots/hz.png
 
 funding:
   - https://github.com/sponsors/qoder-official
@@ -31,7 +31,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
   plugin_platform_interface: ^2.1.7
+  web: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -53,3 +56,6 @@ flutter:
         pluginClass: RefreshRatePlugin
       windows:
         pluginClass: RefreshRatePluginCApi
+      web:
+        pluginClass: RefreshRateWeb
+        fileName: refresh_rate_web.dart

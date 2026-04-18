@@ -183,9 +183,7 @@ List<FrameTiming> _fakeTimingSequence(List<int> durationsUs) {
 List<FrameTiming> _fakeTimings(int count, int intervalUs) =>
     _fakeTimingSequence(List.filled(count, intervalUs));
 
-/// Legacy single-frame factory — vsyncUs defaults to 0 (only valid for tests
-/// that don't exercise avgFps).
-FrameTiming _fakeTiming(int totalMicros) => _MockFrameTiming(totalMicros, 0);
+
 
 class _MockFrameTiming implements FrameTiming {
   final int _totalUs;

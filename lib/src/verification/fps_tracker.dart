@@ -1,13 +1,20 @@
 import 'dart:ui' show FramePhase;
 import 'package:flutter/scheduler.dart';
 
+/// Represents a single rendered frame's timing data.
 class FrameSample {
+  /// Time spent in the UI build thread, in microseconds.
   final int buildUs;
+  /// Time spent in the raster thread, in microseconds.
   final int rasterUs;
+  /// Total time to render the frame, in microseconds.
   final int totalUs;
+  /// Vsync timestamp, in microseconds.
   final int vsyncUs;
+  /// System time when the sample was recorded.
   final DateTime timestamp;
 
+  /// Creates a new [FrameSample].
   FrameSample({
     required this.buildUs,
     required this.rasterUs,
@@ -17,11 +24,14 @@ class FrameSample {
   });
 }
 
+/// Helper that records [FrameTiming] data and calculates FPS statistics.
 class FpsTracker {
   final List<FrameSample> _samples = [];
 
+  /// The number of recorded samples.
   int get sampleCount => _samples.length;
 
+  /// Adds raw frame timings from the Flutter engine.
   void addTimings(List<FrameTiming> timings) {
     final now = DateTime.now();
     for (final t in timings) {
@@ -39,8 +49,10 @@ class FpsTracker {
     }
   }
 
+  /// Clears all recorded samples.
   void reset() => _samples.clear();
 
+  /// Returns an immutable list of currently recorded samples.
   List<FrameSample> get samples => List.unmodifiable(_samples);
 
   /// FPS over all samples — used by benchmark sessions.
@@ -60,21 +72,25 @@ class FpsTracker {
     return (s.length - 1) * 1000000.0 / elapsedUs;
   }
 
+  /// Average duration of the UI build phase across all samples, in ms.
   double get avgBuildMs {
     if (_samples.isEmpty) return 0.0;
     return _samples.fold<int>(0, (s, f) => s + f.buildUs) / _samples.length / 1000.0;
   }
 
+  /// Average duration of the raster phase across all samples, in ms.
   double get avgRasterMs {
     if (_samples.isEmpty) return 0.0;
     return _samples.fold<int>(0, (s, f) => s + f.rasterUs) / _samples.length / 1000.0;
   }
 
+  /// Average total duration (build + raster) across all samples, in ms.
   double get avgTotalMs {
     if (_samples.isEmpty) return 0.0;
     return _samples.fold<int>(0, (s, f) => s + f.totalUs) / _samples.length / 1000.0;
   }
 
+  /// Worst 1-percentile frame rate.
   double get onePercentLowFps {
     if (_samples.isEmpty) return 0.0;
     final sorted = _samples.map((s) => s.totalUs).toList()..sort();
@@ -85,6 +101,7 @@ class FpsTracker {
     return avgSlowUs > 0 ? 1000000 / avgSlowUs : 0.0;
   }
 
+  /// Worst 5-percentile frame rate.
   double get fivePercentLowFps {
     if (_samples.isEmpty) return 0.0;
     final sorted = _samples.map((s) => s.totalUs).toList()..sort();
@@ -95,16 +112,19 @@ class FpsTracker {
     return avgSlowUs > 0 ? 1000000 / avgSlowUs : 0.0;
   }
 
+  /// Counts how many frames exceeded the target budget.
   int jankyFrameCount(double targetHz) {
     final budgetUs = (1000000 / targetHz).round();
     return _samples.where((s) => s.totalUs > budgetUs).length;
   }
 
+  /// Counts how many frames took more than twice the target budget.
   int severeJankCount(double targetHz) {
     final budgetUs = (1000000 / targetHz).round();
     return _samples.where((s) => s.totalUs > budgetUs * 2).length;
   }
 
+  /// Percentage of frames that were missed.
   double missedFramePercent(double targetHz) {
     if (_samples.isEmpty) return 0.0;
     return jankyFrameCount(targetHz) / _samples.length * 100.0;
