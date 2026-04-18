@@ -49,8 +49,11 @@ mixin _OverlayStateMixin<T extends StatefulWidget> on State<T> {
 
 // ── FPS Badge ─────────────────────────────────────────────────────
 
+/// A small overlay widget that displays the current FPS.
 class FpsOverlayWidget extends StatefulWidget {
+  /// The [FpsTracker] providing frame timings.
   final FpsTracker tracker;
+  /// Creates a [FpsOverlayWidget].
   const FpsOverlayWidget({super.key, required this.tracker});
   @override
   State<FpsOverlayWidget> createState() => _FpsOverlayWidgetState();
@@ -77,8 +80,11 @@ class _FpsOverlayWidgetState extends State<FpsOverlayWidget>
 
 // ── Hz Badge ──────────────────────────────────────────────────────
 
+/// A small overlay widget that displays the current display refresh rate.
 class HzOverlayWidget extends StatefulWidget {
+  /// The [FpsTracker] (unused but required for generic widget creation).
   final FpsTracker tracker;
+  /// Creates a [HzOverlayWidget].
   const HzOverlayWidget({super.key, required this.tracker});
   @override
   State<HzOverlayWidget> createState() => _HzOverlayWidgetState();
@@ -105,8 +111,11 @@ class _HzOverlayWidgetState extends State<HzOverlayWidget>
 
 // ── Full Diagnostic Overlay ────────────────────────────────────────
 
+/// A larger overlay widget that displays FPS, build/raster times, and device health.
 class FullOverlayWidget extends StatefulWidget {
+  /// The [FpsTracker] providing frame timings.
   final FpsTracker tracker;
+  /// Creates a [FullOverlayWidget].
   const FullOverlayWidget({super.key, required this.tracker});
   @override
   State<FullOverlayWidget> createState() => _FullOverlayWidgetState();
