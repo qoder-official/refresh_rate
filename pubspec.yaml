@@ -31,8 +31,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_web_plugins:
-    sdk: flutter
   plugin_platform_interface: ^2.1.7
 
 dev_dependencies:
@@ -55,6 +53,3 @@ flutter:
         pluginClass: RefreshRatePlugin
       windows:
         pluginClass: RefreshRatePluginCApi
-      web:
-        pluginClass: RefreshRateWeb
-        fileName: refresh_rate_web.dart

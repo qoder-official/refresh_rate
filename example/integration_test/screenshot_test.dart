@@ -36,8 +36,8 @@ Future<void> _captureScreenshot(
 // pump() doesn't generate real frame timings. These mock widgets render
 // hardcoded values that represent a realistic 120Hz device scenario.
 
-/// Mock FPS badge — identical styling to FullOverlayWidget but with
-/// hardcoded values showing a healthy 120 FPS readout.
+/// Mock FPS badge — identical styling to FpsOverlayWidget (showFPS) with
+/// a hardcoded value showing a healthy 120 FPS readout.
 Widget _mockFpsOverlay() {
   return Positioned(
     top: 0,
@@ -54,28 +54,13 @@ Widget _mockFpsOverlay() {
                 color: const Color(0xDD000000),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const DefaultTextStyle(
+              child: const Text(
+                '120 FPS',
                 style: TextStyle(
-                  color: Color(0xFFFFFFFF),
-                  fontSize: 11,
+                  color: Color(0xFF4CAF50), // green — hitting target
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
                   fontFeatures: [FontFeature.tabularFigures()],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '120 FPS',
-                      style: TextStyle(
-                        color: Color(0xFF4CAF50), // green — hitting target
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        fontFeatures: [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                    Text('build 2.1ms  raster 1.4ms'),
-                    Text('budget 8.3ms @ 120Hz'),
-                  ],
                 ),
               ),
             ),
