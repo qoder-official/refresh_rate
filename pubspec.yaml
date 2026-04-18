@@ -1,0 +1,47 @@
+name: refresh_rate
+description: >
+  Cross-platform Flutter plugin to query and control display refresh rates.
+  Unlock high refresh rates (90Hz/120Hz/144Hz) on Android, iOS, and desktop
+  by properly communicating with the OS compositor — something Flutter doesn't do by default.
+version: 1.0.0
+homepage: https://qoder.in/resources/refresh_rate
+repository: https://github.com/qoder-official/refresh_rate
+issue_tracker: https://github.com/qoder-official/refresh_rate/issues
+documentation: https://github.com/qoder-official/refresh_rate#readme
+
+topics:
+  - display
+  - refresh-rate
+  - performance
+  - fps
+  - animation
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  plugin_platform_interface: ^2.1.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  pigeon: ^22.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: in.qoder.refresh_rate
+        pluginClass: RefreshRatePlugin
+      ios:
+        pluginClass: RefreshRatePlugin
+      linux:
+        pluginClass: RefreshRatePlugin
+      macos:
+        pluginClass: RefreshRatePlugin
+      windows:
+        pluginClass: RefreshRatePluginCApi
