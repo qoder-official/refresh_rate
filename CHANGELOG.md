@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1
+
+- chore: optimize package score for pub.dev
+  - Added documentation for all public APIs.
+  - Formatted SPM integration appropriately for iOS/macOS submodules.
+  - Added stub Web plugin for extended platform support recognition.
+  - Resolved minor lints from test suites.
+
 ## 1.0.0
 
 Initial stable release — unlock, query, overlay, and benchmark display refresh rates across all Flutter platforms.
