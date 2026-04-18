@@ -1,3 +1,6 @@
 session.txt
 documentation/
 build/
+temp_plugin/
+analyze_output.txt
+scripts/
