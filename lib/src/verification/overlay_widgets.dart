@@ -60,7 +60,7 @@ class _FpsOverlayWidgetState extends State<FpsOverlayWidget>
     with _OverlayStateMixin {
   @override
   Widget build(BuildContext context) {
-    final fps = widget.tracker.avgFps;
+    final fps = widget.tracker.recentFps();
     return overlayContainer(
       child: Text(
         '${fps.toStringAsFixed(0)} FPS',
@@ -116,7 +116,7 @@ class _FullOverlayWidgetState extends State<FullOverlayWidget>
     with _OverlayStateMixin {
   @override
   Widget build(BuildContext context) {
-    final fps = widget.tracker.avgFps;
+    final fps = widget.tracker.recentFps();
     final buildMs = widget.tracker.avgBuildMs;
     final rasterMs = widget.tracker.avgRasterMs;
     final targetHz = RefreshRate.info.maxRate;

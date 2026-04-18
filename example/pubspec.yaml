@@ -1,6 +1,7 @@
 name: refresh_rate_example
 description: Example app demonstrating the refresh_rate plugin.
 publish_to: 'none'
+version: 1.0.0+1
 
 environment:
   sdk: ^3.5.0

@@ -1,15 +1,18 @@
+import 'dart:ui' show FramePhase;
 import 'package:flutter/scheduler.dart';
 
 class FrameSample {
   final int buildUs;
   final int rasterUs;
   final int totalUs;
+  final int vsyncUs;
   final DateTime timestamp;
 
   FrameSample({
     required this.buildUs,
     required this.rasterUs,
     required this.totalUs,
+    required this.vsyncUs,
     required this.timestamp,
   });
 }
@@ -26,8 +29,13 @@ class FpsTracker {
         buildUs: t.buildDuration.inMicroseconds,
         rasterUs: t.rasterDuration.inMicroseconds,
         totalUs: t.totalSpan.inMicroseconds,
+        vsyncUs: t.timestampInMicroseconds(FramePhase.vsyncStart),
         timestamp: now,
       ));
+    }
+    // Keep a bounded window so memory doesn't grow unbounded during long sessions
+    if (_samples.length > 600) {
+      _samples.removeRange(0, _samples.length - 600);
     }
   }
 
@@ -35,11 +43,21 @@ class FpsTracker {
 
   List<FrameSample> get samples => List.unmodifiable(_samples);
 
-  double get avgFps {
-    if (_samples.isEmpty) return 0.0;
-    final totalUs = _samples.fold<int>(0, (sum, s) => sum + s.totalUs);
-    final avgUs = totalUs / _samples.length;
-    return avgUs > 0 ? 1000000 / avgUs : 0.0;
+  /// FPS over all samples — used by benchmark sessions.
+  double get avgFps => _fpsFromWindow(_samples);
+
+  /// FPS over the last [n] frames — used by the live overlay.
+  double recentFps([int n = 60]) {
+    if (_samples.length < 2) return 0.0;
+    final window = _samples.length <= n ? _samples : _samples.sublist(_samples.length - n);
+    return _fpsFromWindow(window);
+  }
+
+  static double _fpsFromWindow(List<FrameSample> s) {
+    if (s.length < 2) return 0.0;
+    final elapsedUs = s.last.vsyncUs - s.first.vsyncUs;
+    if (elapsedUs <= 0) return 0.0;
+    return (s.length - 1) * 1000000.0 / elapsedUs;
   }
 
   double get avgBuildMs {

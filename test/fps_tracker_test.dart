@@ -21,55 +21,56 @@ void main() {
 
     test('addTimings accumulates samples', () {
       final tracker = FpsTracker();
-      final timings = List<FrameTiming>.generate(10, (i) => _fakeTiming(8333));
-      tracker.addTimings(timings);
+      tracker.addTimings(_fakeTimings(10, 8333));
       expect(tracker.sampleCount, 10);
     });
 
     test('avgFps is reasonable for 120fps timings', () {
       final tracker = FpsTracker();
-      final timings = List<FrameTiming>.generate(120, (i) => _fakeTiming(8333));
-      tracker.addTimings(timings);
-      // 1s / 8333µs ≈ 120fps
+      tracker.addTimings(_fakeTimings(120, 8333));
+      // 119 intervals * 1e6 / (119 * 8333µs) ≈ 120fps
       expect(tracker.avgFps, closeTo(120.0, 5.0));
     });
 
     test('reset clears all samples', () {
       final tracker = FpsTracker();
-      tracker.addTimings(List<FrameTiming>.generate(10, (i) => _fakeTiming(8333)));
+      tracker.addTimings(_fakeTimings(10, 8333));
       tracker.reset();
       expect(tracker.sampleCount, 0);
     });
 
     test('onePercentLow is less than or equal to avgFps', () {
       final tracker = FpsTracker();
-      final fast = List<FrameTiming>.generate(100, (i) => _fakeTiming(8333));
-      final slow = List<FrameTiming>.generate(10, (i) => _fakeTiming(33333));
-      tracker.addTimings([...fast, ...slow]);
+      tracker.addTimings(_fakeTimingSequence([
+        ...List.filled(100, 8333),
+        ...List.filled(10, 33333),
+      ]));
       expect(tracker.onePercentLowFps, lessThanOrEqualTo(tracker.avgFps));
     });
 
     test('jankyFrameCount counts frames over budget', () {
       final tracker = FpsTracker();
       // At 60fps, budget = ~16667µs. Add 5 frames over budget.
-      final normal = List<FrameTiming>.generate(10, (_) => _fakeTiming(8333));
-      final janky = List<FrameTiming>.generate(5, (_) => _fakeTiming(20000));
-      tracker.addTimings([...normal, ...janky]);
+      tracker.addTimings(_fakeTimingSequence([
+        ...List.filled(10, 8333),
+        ...List.filled(5, 20000),
+      ]));
       expect(tracker.jankyFrameCount(60.0), 5);
     });
 
     test('missedFramePercent is 0 when no jank', () {
       final tracker = FpsTracker();
-      tracker.addTimings(List<FrameTiming>.generate(100, (_) => _fakeTiming(8333)));
+      tracker.addTimings(_fakeTimings(100, 8333));
       expect(tracker.missedFramePercent(120.0), 0.0);
     });
 
     test('onePercentLowFps works for small sample count', () {
       final tracker = FpsTracker();
       // 10 frames: 9 fast + 1 slow. With floor cutoff, 1 slow frame is captured.
-      final fast = List<FrameTiming>.generate(9, (_) => _fakeTiming(8333));
-      final slow = List<FrameTiming>.generate(1, (_) => _fakeTiming(33333));
-      tracker.addTimings([...fast, ...slow]);
+      tracker.addTimings(_fakeTimingSequence([
+        ...List.filled(9, 8333),
+        ...List.filled(1, 33333),
+      ]));
       // onePercentLow should be close to 30fps (the slow frame), not avgFps
       expect(tracker.onePercentLowFps, lessThan(tracker.avgFps));
     });
@@ -91,7 +92,7 @@ void main() {
 
     test('returns excellent for smooth 120fps session', () {
       final tracker = FpsTracker();
-      tracker.addTimings(List<FrameTiming>.generate(120, (_) => _fakeTiming(8333)));
+      tracker.addTimings(_fakeTimings(120, 8333));
       final report = SessionScorer.compute(
         sessionName: 'smooth',
         tracker: tracker,
@@ -106,7 +107,7 @@ void main() {
 
     test('returns powerLimited bottleneck when LPM is true', () {
       final tracker = FpsTracker();
-      tracker.addTimings(List<FrameTiming>.generate(60, (_) => _fakeTiming(8333)));
+      tracker.addTimings(_fakeTimings(60, 8333));
       final report = SessionScorer.compute(
         sessionName: 'lpm',
         tracker: tracker,
@@ -124,8 +125,8 @@ void main() {
 
     test('returns displayCapped for 88% fps', () {
       final tracker = FpsTracker();
-      // 88% of 120fps ≈ 105.6fps. Frame time: 1_000_000 / 105.6 ≈ 9470µs
-      tracker.addTimings(List<FrameTiming>.generate(100, (_) => _fakeTiming(9470)));
+      // 88% of 120fps ≈ 105.6fps. Frame interval: 1_000_000 / 105.6 ≈ 9470µs
+      tracker.addTimings(_fakeTimings(100, 9470));
       final report = SessionScorer.compute(
         sessionName: 'capped',
         tracker: tracker,
@@ -168,11 +169,28 @@ void main() {
   });
 }
 
-FrameTiming _fakeTiming(int totalMicros) => _MockFrameTiming(totalMicros);
+/// Builds a list of fake timings with proper sequential vsync timestamps.
+/// Each frame's vsync = sum of all preceding frame durations.
+List<FrameTiming> _fakeTimingSequence(List<int> durationsUs) {
+  int vsync = 0;
+  return durationsUs.map((dur) {
+    final t = _MockFrameTiming(dur, vsync);
+    vsync += dur;
+    return t as FrameTiming;
+  }).toList();
+}
+
+List<FrameTiming> _fakeTimings(int count, int intervalUs) =>
+    _fakeTimingSequence(List.filled(count, intervalUs));
+
+/// Legacy single-frame factory — vsyncUs defaults to 0 (only valid for tests
+/// that don't exercise avgFps).
+FrameTiming _fakeTiming(int totalMicros) => _MockFrameTiming(totalMicros, 0);
 
 class _MockFrameTiming implements FrameTiming {
   final int _totalUs;
-  _MockFrameTiming(this._totalUs);
+  final int _vsyncUs;
+  _MockFrameTiming(this._totalUs, this._vsyncUs);
 
   @override
   Duration get buildDuration => Duration(microseconds: (_totalUs * 0.6).toInt());
@@ -191,7 +209,10 @@ class _MockFrameTiming implements FrameTiming {
   @override
   int get pictureCacheBytes => 0;
   @override
-  int timestampInMicroseconds(FramePhase phase) => 0;
+  int timestampInMicroseconds(FramePhase phase) {
+    if (phase == FramePhase.vsyncStart) return _vsyncUs;
+    return 0;
+  }
 
   // Forward any additional SDK-version-specific members gracefully.
   @override
