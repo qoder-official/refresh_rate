@@ -8,15 +8,25 @@ import 'generated/refresh_rate_api.g.dart';
 /// pigeon-generated [RefreshRateHostApi]. Tests implement this interface
 /// directly with synchronous fakes — no await required.
 abstract class RefreshRateApiAdapter {
+  /// Fetches the latest display configuration.
   FutureOr<DisplayInfoMessage> getDisplayInfo();
+  /// Enables High Refresh Rate overrides.
   FutureOr<void> enable();
+  /// Disables High Refresh Rate overrides.
   FutureOr<void> disable();
+  /// Requests the highest possible display refresh rate.
   FutureOr<void> preferMax();
+  /// Resets to the system default refresh rate.
   FutureOr<void> preferDefault();
+  /// Attempts to set the display refresh rate to match [fps].
   FutureOr<void> matchContent(double fps);
+  /// Temporarily boosts the refresh rate for [durationMs].
   FutureOr<void> boost(int durationMs);
+  /// Sets the refresh rate based on a given category.
   FutureOr<void> setCategory(int categoryIndex);
+  /// Enables or disables automatic refresh rate boost on touch interactions.
   FutureOr<void> setTouchBoost(bool enabled);
+  /// Checks whether the refresh rate overrides are supported by the platform.
   FutureOr<bool> isSupported();
 }
 
@@ -24,6 +34,7 @@ abstract class RefreshRateApiAdapter {
 class PigeonRefreshRateApiAdapter implements RefreshRateApiAdapter {
   final RefreshRateHostApi _pigeon;
 
+  /// Creates a new [PigeonRefreshRateApiAdapter].
   PigeonRefreshRateApiAdapter() : _pigeon = RefreshRateHostApi();
 
   @override

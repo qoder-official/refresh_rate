@@ -6,7 +6,16 @@ import '../models/session_report.dart';
 import 'fps_tracker.dart';
 import 'session_scorer.dart';
 
+/// An active FPS benchmark session that records frame timings.
+///
+/// Create via [RefreshRate.startSession] and call [end] to receive a
+/// [SessionReport] with verdict, FPS stats, and bottleneck analysis.
+///
+/// The session automatically pauses when the app goes to the background and
+/// resumes (with a warm-up exclusion window) when the app returns to the
+/// foreground.
 class RefreshRateSession {
+  /// The human-readable name given to this session.
   final String name;
   SessionState _state;
   final DateTime _startedAt;
@@ -31,6 +40,7 @@ class RefreshRateSession {
         _targetHz = targetHz,
         _initialInfo = initialInfo;
 
+  /// Creates and starts a new tracking session.
   static RefreshRateSession create(String name, DisplayInfo info) {
     final session = RefreshRateSession._(
       name: name,
@@ -45,10 +55,19 @@ class RefreshRateSession {
     return session;
   }
 
+  /// Current lifecycle state of the session.
   SessionState get state => _state;
+
+  /// The time at which this session was created.
   DateTime get startedAt => _startedAt;
+
+  /// The target refresh rate in Hz (taken from [DisplayInfo.maxRate] at creation time).
   double get targetHz => _targetHz;
 
+  /// Stops frame timing collection and computes a [SessionReport].
+  ///
+  /// Must be called exactly once. After this call the session is in
+  /// [SessionState.completed] and further calls have undefined behaviour.
   Future<SessionReport> end() async {
     _stopTracking();
     _state = SessionState.completed;

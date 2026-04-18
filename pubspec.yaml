@@ -16,10 +16,10 @@ topics:
   - ui
 
 screenshots:
-  - description: "Live FPS overlay showing refresh rate diagnostics"
-    path: screenshots/overlay.png
-  - description: "Before and after — 60Hz vs 120Hz on the same device"
-    path: screenshots/before-after.png
+  - description: "Live FPS overlay showing 120 FPS with frame budget diagnostics"
+    path: screenshots/fps.png
+  - description: "Hz badge confirming 120Hz refresh rate on a real device"
+    path: screenshots/hz.png
 
 funding:
   - https://github.com/sponsors/qoder-official
@@ -30,6 +30,8 @@ environment:
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_web_plugins:
     sdk: flutter
   plugin_platform_interface: ^2.1.7
 
@@ -53,3 +55,6 @@ flutter:
         pluginClass: RefreshRatePlugin
       windows:
         pluginClass: RefreshRatePluginCApi
+      web:
+        pluginClass: RefreshRateWeb
+        fileName: refresh_rate_web.dart

@@ -2,7 +2,9 @@ import '../models/enums.dart';
 import '../models/session_report.dart';
 import 'fps_tracker.dart';
 
+/// Utility class that calculates the final [SessionReport] metrics.
 abstract class SessionScorer {
+  /// Computes a [SessionReport] from the recorded tracking data.
   static SessionReport compute({
     required String sessionName,
     required FpsTracker tracker,
